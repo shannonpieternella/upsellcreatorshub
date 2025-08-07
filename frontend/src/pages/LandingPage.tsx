@@ -71,17 +71,13 @@ const LandingPage: React.FC = () => {
       <nav className="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+            <div
               className="flex items-center space-x-2"
             >
               <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-purple-600 rounded-xl"></div>
               <span className="text-2xl font-bold text-gray-900">UpsellCreatorsHub</span>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+            </div>
+            <div
               className="flex items-center space-x-4"
             >
               <Link to="/login" className="text-gray-700 hover:text-gray-900 font-medium">
@@ -90,16 +86,14 @@ const LandingPage: React.FC = () => {
               <Link to="/register" className="btn-primary">
                 Get Started Free
               </Link>
-            </motion.div>
+            </div>
           </div>
         </div>
       </nav>
 
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          <div
             className="text-center"
           >
             <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6">
@@ -118,12 +112,9 @@ const LandingPage: React.FC = () => {
                 Watch Demo
               </button>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+          <div
             className="mt-20"
           >
             <div className="relative rounded-3xl overflow-hidden shadow-2xl">
@@ -134,16 +125,13 @@ const LandingPage: React.FC = () => {
                 className="w-full h-auto"
               />
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
+          <div
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -152,16 +140,12 @@ const LandingPage: React.FC = () => {
             <p className="text-xl text-gray-600">
               Powerful features to help you manage and grow your social presence
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
                 className="card p-8 hover:shadow-xl transition-shadow"
               >
                 <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-purple-600 rounded-2xl flex items-center justify-center text-white mb-6">
@@ -173,7 +157,7 @@ const LandingPage: React.FC = () => {
                 <p className="text-gray-600">
                   {feature.description}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -181,10 +165,7 @@ const LandingPage: React.FC = () => {
 
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
+          <div
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -193,16 +174,12 @@ const LandingPage: React.FC = () => {
             <p className="text-xl text-gray-600">
               Start free and scale as you grow
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
                 className={`card p-8 ${plan.popular ? 'ring-2 ring-primary-500 relative' : ''}`}
               >
                 {plan.popular && (
@@ -231,7 +208,7 @@ const LandingPage: React.FC = () => {
                 <button className={plan.popular ? 'btn-primary w-full' : 'btn-secondary w-full'}>
                   Get Started
                 </button>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

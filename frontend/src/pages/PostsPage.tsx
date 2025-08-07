@@ -164,10 +164,8 @@ const PostsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.length > 0 ? (
                 posts.map((post: any) => (
-                  <motion.div
+                  <div
                     key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
                     className="card p-6"
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -195,7 +193,7 @@ const PostsPage: React.FC = () => {
                         {new Date(post.scheduledFor).toLocaleString()}
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 ))
               ) : (
                 <div className="col-span-full text-center py-12">
@@ -211,9 +209,7 @@ const PostsPage: React.FC = () => {
       {/* Create Post Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <div
             className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           >
             <div className="p-6 border-b border-gray-200">
@@ -365,7 +361,7 @@ const PostsPage: React.FC = () => {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </div>

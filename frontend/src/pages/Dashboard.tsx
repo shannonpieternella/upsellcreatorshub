@@ -122,19 +122,14 @@ const Dashboard: React.FC = () => {
           </header>
 
           <main className="p-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               style={{ marginBottom: '2rem' }}
             >
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Overview</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, index) => (
-                  <motion.div
+                  <div
                     key={stat.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
                     className="card p-6"
                   >
                     <div className="flex items-center justify-between mb-4">
@@ -144,15 +139,13 @@ const Dashboard: React.FC = () => {
                     </div>
                     <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                     <p className="text-sm text-gray-600">{stat.name}</p>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* Connect Social Accounts */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               style={{ marginBottom: '2rem' }}
             >
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Connect Social Accounts</h2>
@@ -234,12 +227,10 @@ const Dashboard: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
+              <div
                 className="card p-6"
               >
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -306,18 +297,16 @@ const Dashboard: React.FC = () => {
                     <p className="text-gray-500 text-center py-8">Connect Instagram to see your posts!</p>
                   )}
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
+              <div
                 className="card p-6"
               >
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Schedule</h3>
                 <div className="space-y-4">
                   <p className="text-gray-500 text-center py-8">No scheduled posts</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </main>
         </div>
