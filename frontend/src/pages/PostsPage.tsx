@@ -1,369 +1,299 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { 
-  PlusIcon,
-  PhotoIcon,
-  VideoCameraIcon,
-  CalendarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XMarkIcon,
+import { Link, useLocation } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import MobileNav from '../components/MobileNav';
+import {
   ChartBarIcon,
+  CalendarIcon,
   UsersIcon,
   CameraIcon,
-  ChartPieIcon
+  ChartPieIcon,
+  PlusIcon,
+  PhotoIcon,
+  TrashIcon,
+  PencilIcon,
+  EyeIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 
+interface Post {
+  id: string;
+  platform: string;
+  content: string;
+  media?: string;
+  scheduledTime?: string;
+  status: 'draft' | 'scheduled' | 'published' | 'failed';
+  engagement?: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
+}
+
 const PostsPage: React.FC = () => {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram']);
-  const [postContent, setPostContent] = useState('');
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<string>('');
+  const user = useAuthStore((state) => state.user);
+  const location = useLocation();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [selectedPlatform, setSelectedPlatform] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    fetchPosts();
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const fetchPosts = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/posts');
-      const data = await response.json();
-      setPosts(data.posts || []);
-    } catch (error) {
-      console.log('Failed to fetch posts:', error);
+  const navItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartBarIcon },
+    { path: '/posts', label: 'Posts', icon: CameraIcon },
+    { path: '/calendar', label: 'Calendar', icon: CalendarIcon },
+    { path: '/analytics', label: 'Analytics', icon: ChartPieIcon },
+    { path: '/accounts', label: 'Accounts', icon: UsersIcon },
+  ];
+
+  const platforms = [
+    { id: 'all', name: 'All Platforms', color: 'from-purple-600 to-pink-600' },
+    { id: 'instagram', name: 'Instagram', color: 'from-pink-500 to-purple-600' },
+    { id: 'tiktok', name: 'TikTok', color: 'from-black to-gray-800', disabled: true },
+    { id: 'pinterest', name: 'Pinterest', color: 'from-red-500 to-red-600', disabled: true },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'published':
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <CheckCircleIcon className="w-4 h-4 mr-1" />
+            Published
+          </span>
+        );
+      case 'scheduled':
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <ClockIcon className="w-4 h-4 mr-1" />
+            Scheduled
+          </span>
+        );
+      case 'draft':
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <PencilIcon className="w-4 h-4 mr-1" />
+            Draft
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            <XCircleIcon className="w-4 h-4 mr-1" />
+            Failed
+          </span>
+        );
+      default:
+        return null;
     }
-  };
-
-  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setMediaFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setMediaPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCreatePost = async () => {
-    const postData = {
-      content: postContent,
-      platforms: selectedPlatforms,
-      scheduledFor: scheduledDate && scheduledTime ? `${scheduledDate}T${scheduledTime}` : null
-    };
-
-    try {
-      const response = await fetch('http://localhost:5000/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postData),
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        setShowCreateModal(false);
-        setPostContent('');
-        setMediaFile(null);
-        setMediaPreview('');
-        fetchPosts();
-      }
-    } catch (error) {
-      console.log('Failed to create post:', error);
-    }
-  };
-
-  const togglePlatform = (platform: string) => {
-    if (platform === 'tiktok' || platform === 'pinterest') return; // Coming soon
-    
-    setSelectedPlatforms(prev =>
-      prev.includes(platform)
-        ? prev.filter(p => p !== platform)
-        : [...prev, platform]
-    );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/20">
+      {/* Mobile Navigation */}
+      <MobileNav />
+
       <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
-          <div className="p-6">
-            <div className="flex items-center space-x-2 mb-8">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-purple-600 rounded-xl"></div>
-              <span className="text-xl font-bold text-gray-900">UpsellCreatorsHub</span>
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:bg-white/80 lg:backdrop-blur-xl lg:border-r lg:border-gray-200">
+          <div className="flex-1 flex flex-col pt-8 pb-4 overflow-y-auto">
+            <div className="flex items-center flex-shrink-0 px-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-lg shadow-purple-500/25"></div>
+                <div>
+                  <span className="text-2xl font-bold text-gray-900">UpsellCreators</span>
+                  <span className="text-2xl font-light text-gray-600">Hub</span>
+                </div>
+              </div>
             </div>
             
-            <nav className="space-y-2">
-              <Link to="/dashboard" className="sidebar-item">
-                <ChartBarIcon className="w-5 h-5 mr-3" />
-                Dashboard
-              </Link>
-              <Link to="/posts" className="sidebar-item sidebar-item-active">
-                <CameraIcon className="w-5 h-5 mr-3" />
-                Posts
-              </Link>
-              <Link to="/calendar" className="sidebar-item">
-                <CalendarIcon className="w-5 h-5 mr-3" />
-                Calendar
-              </Link>
-              <Link to="/analytics" className="sidebar-item">
-                <ChartPieIcon className="w-5 h-5 mr-3" />
-                Analytics
-              </Link>
-              <Link to="/accounts" className="sidebar-item">
-                <UsersIcon className="w-5 h-5 mr-3" />
-                Accounts
-              </Link>
+            <nav className="mt-10 flex-1 px-4 space-y-2">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon className={`mr-3 flex-shrink-0 h-6 w-6 ${
+                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
+                    }`} />
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
+          </div>
+          
+          {/* User Profile Section */}
+          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+            <div className="flex items-center w-full">
+              <div className="flex items-center flex-1">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
+                  <p className="text-xs text-gray-500">{user?.plan || 'Free'} Plan</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  useAuthStore.getState().logout();
+                  window.location.href = '/';
+                }}
+                className="ml-auto text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
-          <header className="bg-white border-b border-gray-200">
-            <div className="px-8 py-4 flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Posts</h1>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="btn-primary"
-              >
-                <PlusIcon className="w-5 h-5 mr-2" />
-                Create Post
-              </button>
+        <div className={`flex-1 ${!isMobile ? 'lg:pl-72' : ''}`}>
+          {/* Top Header */}
+          <header className={`bg-white/60 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-30 ${isMobile ? 'mt-16' : ''}`}>
+            <div className="px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Posts</h1>
+                  <p className="mt-1 text-sm text-gray-600">Manage and schedule your social media content</p>
+                </div>
+                <Link
+                  to="/create-post"
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 transition-all transform hover:scale-105"
+                >
+                  <PlusIcon className="w-5 h-5 mr-2" />
+                  Create Post
+                </Link>
+              </div>
             </div>
           </header>
 
-          <main className="p-8">
-            {/* Platform Tabs */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex space-x-4">
-                <button className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg">
-                  All Platforms
-                </button>
-                <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                  Instagram
-                </button>
-                <button className="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed" disabled>
-                  TikTok (Coming Soon)
-                </button>
-                <button className="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed" disabled>
-                  Pinterest (Coming Soon)
-                </button>
+          <main className="px-4 sm:px-6 lg:px-8 py-8">
+            {/* Filters Bar */}
+            <div className="mb-8 bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* Platform Tabs */}
+                <div className="flex items-center space-x-2 overflow-x-auto pb-2 lg:pb-0">
+                  {platforms.map((platform) => (
+                    <button
+                      key={platform.id}
+                      onClick={() => !platform.disabled && setSelectedPlatform(platform.id)}
+                      disabled={platform.disabled}
+                      className={`px-6 py-2.5 rounded-xl font-medium whitespace-nowrap transition-all ${
+                        selectedPlatform === platform.id
+                          ? `bg-gradient-to-r ${platform.color} text-white shadow-lg`
+                          : platform.disabled
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {platform.name}
+                      {platform.disabled && ' (Coming Soon)'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search Bar */}
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search posts..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent w-64"
+                    />
+                  </div>
+                  <button className="p-2.5 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all">
+                    <FunnelIcon className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Posts Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posts.length > 0 ? (
-                posts.map((post: any) => (
-                  <div
-                    key={post.id}
-                    className="card p-6"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        {post.platforms?.includes('instagram') && (
-                          <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <PhotoIcon className="w-4 h-4 text-white" />
-                          </div>
-                        )}
-                      </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        post.status === 'published' ? 'bg-green-100 text-green-700' :
-                        post.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {post.status}
-                      </span>
-                    </div>
-                    
-                    <p className="text-gray-700 mb-4 line-clamp-3">{post.content}</p>
-                    
-                    {post.scheduledFor && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <CalendarIcon className="w-4 h-4 mr-1" />
-                        {new Date(post.scheduledFor).toLocaleString()}
+            {/* Posts Grid/List */}
+            {posts.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-lg p-16 text-center">
+                <div className="w-24 h-24 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <PhotoIcon className="w-12 h-12 text-purple-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">No posts yet</h3>
+                <p className="text-gray-600 mb-8">Create your first post to get started!</p>
+                <Link
+                  to="/create-post"
+                  className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                >
+                  <PlusIcon className="w-5 h-5 mr-2" />
+                  Create Your First Post
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {posts.map((post) => (
+                  <div key={post.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all">
+                    {post.media && (
+                      <div className="aspect-square bg-gray-100 rounded-t-2xl overflow-hidden">
+                        <img src={post.media} alt="Post media" className="w-full h-full object-cover" />
                       </div>
                     )}
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        {getStatusBadge(post.status)}
+                        <span className="text-sm text-gray-500">{post.platform}</span>
+                      </div>
+                      <p className="text-gray-700 mb-4 line-clamp-3">{post.content}</p>
+                      {post.engagement && (
+                        <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                          <span>❤️ {post.engagement.likes}</span>
+                          <span>💬 {post.engagement.comments}</span>
+                          <span>🔄 {post.engagement.shares}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <button className="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all">
+                          <EyeIcon className="w-4 h-4 inline mr-1" />
+                          View
+                        </button>
+                        <button className="p-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all">
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                        <button className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all">
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                ))
-              ) : (
-                <div className="col-span-full text-center py-12">
-                  <PhotoIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No posts yet. Create your first post!</p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </main>
         </div>
       </div>
-
-      {/* Create Post Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-          >
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Create New Post</h2>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {/* Platform Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Select Platforms
-                </label>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => togglePlatform('instagram')}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                      selectedPlatforms.includes('instagram')
-                        ? 'border-pink-500 bg-pink-50 text-pink-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    <PhotoIcon className="w-5 h-5" />
-                    <span>Instagram</span>
-                    {selectedPlatforms.includes('instagram') && (
-                      <CheckCircleIcon className="w-5 h-5" />
-                    )}
-                  </button>
-                  
-                  <button
-                    disabled
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg border-2 border-gray-200 text-gray-400 cursor-not-allowed"
-                  >
-                    <VideoCameraIcon className="w-5 h-5" />
-                    <span>TikTok</span>
-                    <span className="text-xs">(Soon)</span>
-                  </button>
-                  
-                  <button
-                    disabled
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg border-2 border-gray-200 text-gray-400 cursor-not-allowed"
-                  >
-                    <PhotoIcon className="w-5 h-5" />
-                    <span>Pinterest</span>
-                    <span className="text-xs">(Soon)</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Caption
-                </label>
-                <textarea
-                  value={postContent}
-                  onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Write your caption..."
-                  className="input-field min-h-[120px]"
-                />
-                <div className="mt-2 text-sm text-gray-500">
-                  {postContent.length} / 2200 characters
-                </div>
-              </div>
-
-              {/* Media Upload */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Media
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  {mediaPreview ? (
-                    <div className="relative">
-                      <img
-                        src={mediaPreview}
-                        alt="Preview"
-                        className="max-h-64 mx-auto rounded-lg"
-                      />
-                      <button
-                        onClick={() => {
-                          setMediaFile(null);
-                          setMediaPreview('');
-                        }}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
-                      >
-                        <XMarkIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer">
-                      <PhotoIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">Click to upload image or video</p>
-                      <input
-                        type="file"
-                        accept="image/*,video/*"
-                        onChange={handleMediaUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-                </div>
-              </div>
-
-              {/* Schedule */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Schedule Post
-                </label>
-                <div className="flex space-x-3">
-                  <input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    className="input-field flex-1"
-                  />
-                  <input
-                    type="time"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="input-field flex-1"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone} (Your local time)
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreatePost}
-                  className="btn-primary"
-                  disabled={!postContent || selectedPlatforms.length === 0}
-                >
-                  {scheduledDate ? 'Schedule Post' : 'Publish Now'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

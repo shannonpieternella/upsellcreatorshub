@@ -56,7 +56,10 @@ app.get('/api/auth/facebook/callback', async (req, res) => {
   
   if (error) {
     console.log('❌ Instagram OAuth error:', error);
-    return res.redirect('http://localhost:3000/dashboard?error=instagram_oauth_failed');
+    const redirectUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://upsellcreatorshub.upsellbusinessagency.com/dashboard?error=instagram_oauth_failed'
+      : 'http://localhost:3000/dashboard?error=instagram_oauth_failed';
+    return res.redirect(redirectUrl);
   }
   
   if (code) {
@@ -75,7 +78,9 @@ app.get('/api/auth/facebook/callback', async (req, res) => {
           client_id: process.env.INSTAGRAM_CLIENT_ID,
           client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
           grant_type: 'authorization_code',
-          redirect_uri: process.env.REDIRECT_URI || 'https://c27061647981.ngrok-free.app/api/auth/facebook/callback',
+          redirect_uri: process.env.NODE_ENV === 'production' 
+            ? 'https://upsellcreatorshub.upsellbusinessagency.com/api/auth/facebook/callback'
+            : (process.env.REDIRECT_URI || 'https://c27061647981.ngrok-free.app/api/auth/facebook/callback'),
           code: code,
         }),
       });
@@ -130,18 +135,30 @@ app.get('/api/auth/facebook/callback', async (req, res) => {
             console.log('💾 Instagram connection saved to database');
           }
           
-          return res.redirect(`http://localhost:3000/dashboard?instagram_connected=true&username=${userData.username}`);
+          const successUrl = process.env.NODE_ENV === 'production' 
+            ? `https://upsellcreatorshub.upsellbusinessagency.com/dashboard?instagram_connected=true&username=${userData.username}`
+            : `http://localhost:3000/dashboard?instagram_connected=true&username=${userData.username}`;
+          return res.redirect(successUrl);
         } else {
           console.log('❌ No username in response:', userData);
-          return res.redirect('http://localhost:3000/dashboard?instagram_connected=true&username=InstagramUser');
+          const successUrl = process.env.NODE_ENV === 'production' 
+            ? 'https://upsellcreatorshub.upsellbusinessagency.com/dashboard?instagram_connected=true&username=InstagramUser'
+            : 'http://localhost:3000/dashboard?instagram_connected=true&username=InstagramUser';
+          return res.redirect(successUrl);
         }
       } else {
         console.log('❌ Failed to get access token:', tokenData);
-        return res.redirect('http://localhost:3000/dashboard?error=token_exchange_failed');
+        const errorUrl = process.env.NODE_ENV === 'production' 
+          ? 'https://upsellcreatorshub.upsellbusinessagency.com/dashboard?error=token_exchange_failed'
+          : 'http://localhost:3000/dashboard?error=token_exchange_failed';
+        return res.redirect(errorUrl);
       }
     } catch (error) {
       console.log('❌ Instagram OAuth error:', error);
-      return res.redirect('http://localhost:3000/dashboard?error=instagram_oauth_failed');
+      const errorUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://upsellcreatorshub.upsellbusinessagency.com/dashboard?error=instagram_oauth_failed'
+        : 'http://localhost:3000/dashboard?error=instagram_oauth_failed';
+      return res.redirect(errorUrl);
     }
   }
   
@@ -162,6 +179,25 @@ app.get('/api/auth/facebook/callback', async (req, res) => {
   
   console.log('❌ Missing required parameters');
   res.sendStatus(400);
+});
+
+// Disconnect Instagram account
+app.post('/api/instagram/disconnect', async (req, res) => {
+  try {
+    const users = await User.find();
+    const user = users[0];
+    
+    if (user) {
+      await InstagramConnection.deleteOne({ userId: user._id });
+      console.log('✅ Instagram account disconnected');
+      res.json({ success: true, message: 'Instagram account disconnected' });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.log('❌ Error disconnecting Instagram:', error);
+    res.status(500).json({ error: 'Failed to disconnect Instagram' });
+  }
 });
 
 // Check Instagram connection status
@@ -347,7 +383,7 @@ app.post('/api/instagram/disconnect', async (req, res) => {
   }
 });
 
-// Get Instagram posts
+// Get Instagram posts with full details
 app.get('/api/instagram/posts', async (req, res) => {
   try {
     const users = await User.find();

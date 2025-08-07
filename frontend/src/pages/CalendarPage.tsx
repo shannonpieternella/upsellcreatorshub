@@ -1,241 +1,339 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { 
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PlusIcon,
-  CalendarIcon,
+import { Link, useLocation } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import MobileNav from '../components/MobileNav';
+import {
   ChartBarIcon,
+  CalendarIcon,
   UsersIcon,
   CameraIcon,
-  ChartPieIcon
+  ChartPieIcon,
+  PlusIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
 
 const CalendarPage: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  const location = useLocation();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
-  
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const navItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: ChartBarIcon },
+    { path: '/posts', label: 'Posts', icon: CameraIcon },
+    { path: '/calendar', label: 'Calendar', icon: CalendarIcon },
+    { path: '/analytics', label: 'Analytics', icon: ChartPieIcon },
+    { path: '/accounts', label: 'Accounts', icon: UsersIcon },
+  ];
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add all days in month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i));
+    }
+    
+    return days;
+  };
+
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
-
-  const previousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
-  const renderCalendarDays = () => {
-    const daysInMonth = getDaysInMonth(currentDate);
-    const firstDay = getFirstDayOfMonth(currentDate);
-    const days = [];
-
-    // Empty cells for days before month starts
-    for (let i = 0; i < firstDay; i++) {
-      days.push(
-        <div key={`empty-${i}`} className="h-32 bg-gray-50 border border-gray-100"></div>
-      );
-    }
-
-    // Days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dayPosts = scheduledPosts.filter(post => {
-        const postDate = new Date(post.scheduledFor);
-        return postDate.getDate() === day && 
-               postDate.getMonth() === currentDate.getMonth() &&
-               postDate.getFullYear() === currentDate.getFullYear();
-      });
-
-      const isToday = new Date().getDate() === day && 
-                      new Date().getMonth() === currentDate.getMonth() &&
-                      new Date().getFullYear() === currentDate.getFullYear();
-
-      days.push(
-        <div
-          key={day}
-          className={`h-32 bg-white border border-gray-200 p-2 hover:bg-gray-50 transition-colors ${
-            isToday ? 'ring-2 ring-primary-500' : ''
-          }`}
-        >
-          <div className="flex justify-between items-start mb-2">
-            <span className={`text-sm font-medium ${isToday ? 'text-primary-600' : 'text-gray-700'}`}>
-              {day}
-            </span>
-            {dayPosts.length > 0 && (
-              <span className="bg-pink-100 text-pink-700 text-xs px-2 py-1 rounded-full">
-                {dayPosts.length}
-              </span>
-            )}
-          </div>
-          
-          <div className="space-y-1">
-            {dayPosts.slice(0, 2).map((post, index) => (
-              <div
-                key={index}
-                className="text-xs p-1 bg-pink-50 text-pink-700 rounded truncate"
-              >
-                {post.content?.substring(0, 30)}...
-              </div>
-            ))}
-            {dayPosts.length > 2 && (
-              <div className="text-xs text-gray-500">
-                +{dayPosts.length - 2} more
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    return days;
+  const isToday = (date: Date | null) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
   };
 
-  useEffect(() => {
-    // Fetch scheduled posts
-    fetchScheduledPosts();
-  }, [currentDate]);
+  const isSelected = (date: Date | null) => {
+    if (!date || !selectedDate) return false;
+    return date.getDate() === selectedDate.getDate() &&
+           date.getMonth() === selectedDate.getMonth() &&
+           date.getFullYear() === selectedDate.getFullYear();
+  };
 
-  const fetchScheduledPosts = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/posts/scheduled');
-      const data = await response.json();
-      setScheduledPosts(data.posts || []);
-    } catch (error) {
-      console.log('Failed to fetch scheduled posts:', error);
-    }
+  // Mock scheduled posts data
+  const scheduledPosts = {
+    '2025-01-15': [{ time: '10:00 AM', platform: 'instagram', content: 'New product launch!' }],
+    '2025-01-20': [{ time: '2:00 PM', platform: 'instagram', content: 'Behind the scenes' }],
+  };
+
+  const getPostsForDate = (date: Date | null) => {
+    if (!date) return [];
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return scheduledPosts[dateStr as keyof typeof scheduledPosts] || [];
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/20">
+      {/* Mobile Navigation */}
+      <MobileNav />
+
       <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
-          <div className="p-6">
-            <div className="flex items-center space-x-2 mb-8">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-purple-600 rounded-xl"></div>
-              <span className="text-xl font-bold text-gray-900">UpsellCreatorsHub</span>
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:bg-white/80 lg:backdrop-blur-xl lg:border-r lg:border-gray-200">
+          <div className="flex-1 flex flex-col pt-8 pb-4 overflow-y-auto">
+            <div className="flex items-center flex-shrink-0 px-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-lg shadow-purple-500/25"></div>
+                <div>
+                  <span className="text-2xl font-bold text-gray-900">UpsellCreators</span>
+                  <span className="text-2xl font-light text-gray-600">Hub</span>
+                </div>
+              </div>
             </div>
             
-            <nav className="space-y-2">
-              <Link to="/dashboard" className="sidebar-item">
-                <ChartBarIcon className="w-5 h-5 mr-3" />
-                Dashboard
-              </Link>
-              <Link to="/posts" className="sidebar-item">
-                <CameraIcon className="w-5 h-5 mr-3" />
-                Posts
-              </Link>
-              <Link to="/calendar" className="sidebar-item sidebar-item-active">
-                <CalendarIcon className="w-5 h-5 mr-3" />
-                Calendar
-              </Link>
-              <Link to="/analytics" className="sidebar-item">
-                <ChartPieIcon className="w-5 h-5 mr-3" />
-                Analytics
-              </Link>
-              <Link to="/accounts" className="sidebar-item">
-                <UsersIcon className="w-5 h-5 mr-3" />
-                Accounts
-              </Link>
+            <nav className="mt-10 flex-1 px-4 space-y-2">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon className={`mr-3 flex-shrink-0 h-6 w-6 ${
+                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
+                    }`} />
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
+          </div>
+          
+          {/* User Profile Section */}
+          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+            <div className="flex items-center w-full">
+              <div className="flex items-center flex-1">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
+                  <p className="text-xs text-gray-500">{user?.plan || 'Free'} Plan</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  useAuthStore.getState().logout();
+                  window.location.href = '/';
+                }}
+                className="ml-auto text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
-          <header className="bg-white border-b border-gray-200">
-            <div className="px-8 py-4 flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Content Calendar</h1>
-              <Link to="/posts" className="btn-primary">
-                <PlusIcon className="w-5 h-5 mr-2" />
-                Schedule Post
-              </Link>
+        <div className={`flex-1 ${!isMobile ? 'lg:pl-72' : ''}`}>
+          {/* Top Header */}
+          <header className={`bg-white/60 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-30 ${isMobile ? 'mt-16' : ''}`}>
+            <div className="px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Content Calendar</h1>
+                  <p className="mt-1 text-sm text-gray-600">Schedule and organize your social media posts</p>
+                </div>
+                <Link
+                  to="/create-post"
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 transition-all transform hover:scale-105"
+                >
+                  <PlusIcon className="w-5 h-5 mr-2" />
+                  Schedule Post
+                </Link>
+              </div>
             </div>
           </header>
 
-          <main className="p-8">
-            {/* Calendar Header */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                </h2>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={previousMonth}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentDate(new Date())}
-                    className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                  >
-                    Today
-                  </button>
-                  <button
-                    onClick={nextMonth}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <ChevronRightIcon className="w-5 h-5 text-gray-600" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Platform Filters */}
-              <div className="flex space-x-3 mb-6">
-                <button className="px-3 py-1 text-sm bg-pink-100 text-pink-700 rounded-lg">
-                  Instagram
-                </button>
-                <button className="px-3 py-1 text-sm bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed" disabled>
-                  TikTok (Soon)
-                </button>
-                <button className="px-3 py-1 text-sm bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed" disabled>
-                  Pinterest (Soon)
-                </button>
-              </div>
-
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-px bg-gray-200">
-                {/* Day Headers */}
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="bg-gray-50 p-2 text-center text-sm font-medium text-gray-700">
-                    {day}
+          <main className="px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Calendar */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  {/* Calendar Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                    </h2>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={prevMonth}
+                        className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all"
+                      >
+                        <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+                      </button>
+                      <button
+                        onClick={() => setCurrentDate(new Date())}
+                        className="px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all text-sm font-medium text-gray-700"
+                      >
+                        Today
+                      </button>
+                      <button
+                        onClick={nextMonth}
+                        className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all"
+                      >
+                        <ChevronRightIcon className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </div>
                   </div>
-                ))}
-                
-                {/* Calendar Days */}
-                {renderCalendarDays()}
-              </div>
-            </div>
 
-            {/* Legend */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Legend</h3>
-              <div className="flex space-x-6">
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-pink-100 rounded"></div>
-                  <span className="text-sm text-gray-600">Instagram Post</span>
+                  {/* Day Names */}
+                  <div className="grid grid-cols-7 gap-2 mb-2">
+                    {dayNames.map(day => (
+                      <div key={day} className="text-center text-sm font-semibold text-gray-600 py-2">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-2">
+                    {getDaysInMonth(currentDate).map((date, index) => {
+                      const posts = date ? getPostsForDate(date) : [];
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => date && setSelectedDate(date)}
+                          className={`
+                            aspect-square p-2 rounded-xl cursor-pointer transition-all
+                            ${!date ? 'cursor-default' : ''}
+                            ${isToday(date) ? 'bg-purple-100 border-2 border-purple-500' : ''}
+                            ${isSelected(date) && !isToday(date) ? 'bg-gray-100 border-2 border-gray-300' : ''}
+                            ${date && !isToday(date) && !isSelected(date) ? 'hover:bg-gray-50 border border-gray-200' : ''}
+                            ${!date ? '' : 'border border-gray-200'}
+                          `}
+                        >
+                          {date && (
+                            <>
+                              <div className={`text-sm font-medium ${isToday(date) ? 'text-purple-700' : 'text-gray-900'}`}>
+                                {date.getDate()}
+                              </div>
+                              {posts.length > 0 && (
+                                <div className="mt-1">
+                                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-blue-100 rounded"></div>
-                  <span className="text-sm text-gray-600">TikTok (Coming Soon)</span>
+              </div>
+
+              {/* Scheduled Posts Sidebar */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    {selectedDate ? (
+                      <>Scheduled for {selectedDate.toLocaleDateString()}</>
+                    ) : (
+                      <>Today's Schedule</>
+                    )}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {getPostsForDate(selectedDate || new Date()).length > 0 ? (
+                      getPostsForDate(selectedDate || new Date()).map((post, index) => (
+                        <div key={index} className="p-4 bg-gray-50 rounded-xl">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              <ClockIcon className="w-4 h-4 inline mr-1" />
+                              {post.time}
+                            </span>
+                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                              {post.platform}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">{post.content}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <PhotoIcon className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500">No posts scheduled</p>
+                        <Link
+                          to="/create-post"
+                          className="inline-flex items-center mt-4 text-purple-600 hover:text-purple-700 font-medium"
+                        >
+                          <PlusIcon className="w-4 h-4 mr-1" />
+                          Schedule a post
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-red-100 rounded"></div>
-                  <span className="text-sm text-gray-600">Pinterest (Coming Soon)</span>
+
+                {/* Quick Stats */}
+                <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">This Month</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Total Posts</span>
+                      <span className="text-sm font-bold text-gray-900">24</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Scheduled</span>
+                      <span className="text-sm font-bold text-blue-600">8</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Published</span>
+                      <span className="text-sm font-bold text-green-600">16</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UpsellCreatorsHub Icon Generator</title>
+</head>
+<body style="margin: 0; padding: 20px; background: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+    <div style="text-align: center;">
+        <canvas id="iconCanvas" width="1024" height="1024" style="border: 2px solid #ccc; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);"></canvas>
+        <br><br>
+        <button onclick="downloadIcon()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 40px; font-size: 18px; border-radius: 10px; cursor: pointer;">Download Icon (1024x1024)</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('iconCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 1024, 1024);
+        gradient.addColorStop(0, '#9333ea'); // Purple-600
+        gradient.addColorStop(1, '#ec4899'); // Pink-600
+        
+        // Fill background with gradient
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 1024, 1024);
+        
+        // Add subtle pattern overlay
+        ctx.globalAlpha = 0.1;
+        for(let i = 0; i < 1024; i += 100) {
+            ctx.beginPath();
+            ctx.arc(i, i, 300, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        
+        // Create center circle background
+        ctx.beginPath();
+        ctx.arc(512, 512, 300, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.fill();
+        
+        // Add inner glow
+        const innerGradient = ctx.createRadialGradient(512, 512, 0, 512, 512, 280);
+        innerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+        innerGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.beginPath();
+        ctx.arc(512, 512, 280, 0, Math.PI * 2);
+        ctx.fillStyle = innerGradient;
+        ctx.fill();
+        
+        // Draw text "UC" in center
+        ctx.font = 'bold 420px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('UC', 512, 512);
+        
+        // Add shadow to text
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 10;
+        ctx.fillText('UC', 512, 512);
+        ctx.shadowBlur = 0;
+        
+        // Add "Hub" subtitle
+        ctx.font = 'bold 120px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillText('HUB', 512, 720);
+        
+        // Add decorative elements
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 4;
+        
+        // Top left corner decoration
+        ctx.beginPath();
+        ctx.moveTo(100, 100);
+        ctx.lineTo(200, 100);
+        ctx.moveTo(100, 100);
+        ctx.lineTo(100, 200);
+        ctx.stroke();
+        
+        // Top right corner decoration
+        ctx.beginPath();
+        ctx.moveTo(924, 100);
+        ctx.lineTo(824, 100);
+        ctx.moveTo(924, 100);
+        ctx.lineTo(924, 200);
+        ctx.stroke();
+        
+        // Bottom left corner decoration
+        ctx.beginPath();
+        ctx.moveTo(100, 924);
+        ctx.lineTo(200, 924);
+        ctx.moveTo(100, 924);
+        ctx.lineTo(100, 824);
+        ctx.stroke();
+        
+        // Bottom right corner decoration
+        ctx.beginPath();
+        ctx.moveTo(924, 924);
+        ctx.lineTo(824, 924);
+        ctx.moveTo(924, 924);
+        ctx.lineTo(924, 824);
+        ctx.stroke();
+        
+        function downloadIcon() {
+            const link = document.createElement('a');
+            link.download = 'upsellcreatorshub-icon-1024x1024.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
